@@ -12,6 +12,7 @@ app.use(cors({ origin: 'https://mustaphaagouzal.github.io' }));
 app.use(bodyParser.json());
 app.use(express.static('uploads'));
 
+// In-memory database for MAC and playlist association
 const macToFileMap = {};
 
 // Endpoint to upload M3U file and associate with MAC address
@@ -34,5 +35,6 @@ app.get('/playlist/:macAddress', (req, res) => {
     res.sendFile(filePath);
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
