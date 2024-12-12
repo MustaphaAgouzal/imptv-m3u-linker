@@ -15,24 +15,48 @@ app.use(express.static('uploads'));
 // In-memory database for MAC and playlist association
 const macToFileMap = {};
 
-// Endpoint to upload M3U file and associate with MAC address
+// Endpoint to upload M3U file and associate it with a MAC address
 app.post('/upload', upload.single('m3uFile'), (req, res) => {
     const { macAddress } = req.body;
-    if (!macAddress) return res.status(400).json({ error: 'MAC address is required' });
+    if (!macAddress) {
+        return res.status(400).json({ error: 'MAC address is required' });
+    }
 
+    // Get the file path and store it in the in-memory database
     const filePath = path.join(__dirname, req.file.path);
     macToFileMap[macAddress] = filePath;
 
-    res.json({ message: 'File uploaded successfully', macAddress, filePath });
+    res.json({
+        message: 'File uploaded successfully',
+        macAddress,
+        filePath
+    });
 });
 
-// Endpoint to retrieve M3U file by MAC address
+// Endpoint to retrieve the M3U file path by MAC address
 app.get('/playlist/:macAddress', (req, res) => {
     const { macAddress } = req.params;
     const filePath = macToFileMap[macAddress];
-    if (!filePath) return res.status(404).json({ error: 'No playlist found for this MAC address' });
 
-    res.sendFile(filePath);
+    if (!filePath) {
+        return res.status(404).json({ error: 'No playlist found for this MAC address' });
+    }
+
+    // Respond with the file path as JSON
+    res.json({
+        filePath: `http://${req.hostname}:${PORT}/${path.basename(filePath)}`,
+    });
+});
+
+// Endpoint to serve uploaded files
+app.get('/uploads/:filename', (req, res) => {
+    const filePath = path.join(__dirname, 'uploads', req.params.filename);
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
 });
 
 // Start server
